@@ -1,167 +1,171 @@
-# M3D-Net
+<div align="center">
 
-PyTorch research code for multimodal breast cancer classification from an ultrasound image and clinical information. This repository provides the M3D-Net modules, a shared training pipeline, and the BrEaST additional-dataset matched comparison associated with Table 2.
+<img src="assets/banner.svg" alt="M3D-Net: spatial context, feature reuse, differential attention" width="100%">
 
-The release contains source code and configuration only. Datasets, patient manifests, pretrained weights, trained checkpoints, logs, and experimental results are generated or downloaded locally and are excluded from version control.
+### Hierarchical Coordination of Spatial Context, Feature Reuse,<br>and Differential Attention for Mammography Classification
 
-## Model
+<p><strong>Zheng Yu<sup>1</sup> · Xinhang Li<sup>2</sup> · Jiabao Gao<sup>1,2</sup> · Xiang Li<sup>3,*</sup></strong></p>
 
-The image branch combines multi-scale coordinate attention (MCA), multi-path dynamic dense connections (MUDD), and differential attention (DA). Its 1000-dimensional output is concatenated with a 1000-dimensional clinical representation. A shared `2000 -> 1024 -> 512 -> 2` MLP performs binary classification.
+<sub>¹ Shenzhen Loop Area Institute · ² The Chinese University of Hong Kong, Shenzhen<br>³ Shenzhen Research Institute of Big Data · * Corresponding author</sub>
 
-The clinical branch embeds 22 clinical features into 128 dimensions and applies four Transformer encoder layers with eight attention heads. The historical class name `iTransformer` is retained for checkpoint compatibility; this implementation uses one clinical token and is not the time-series iTransformer architecture.
+<br><br>
 
-Two explicit M3D configurations are available:
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](pixi.toml)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.7.1-EE4C2C?logo=pytorch&logoColor=white)](pixi.toml)
+[![License](https://img.shields.io/badge/License-Apache--2.0-3A73AA)](LICENSE)
+[![Protocol](https://img.shields.io/badge/Protocol-50%20epochs-8266C7)](configs/breast_full_clinical.json)
 
-- `m3d`: the additional-dataset experiment configuration, with the corrected DA output layout and the STE projection residual enabled.
-- `m3d_original`: the original implementation's DA output layout and projection behavior. Both switches are disabled. Parameter names and shapes are unchanged.
+[**Overview**](#overview) · [**Architecture**](#architecture) · [**Quick start**](#quick-start) · [**Reproduction**](docs/reproduction.md) · [**Citation**](#citation)
 
-The DA correction preserves the head/channel/spatial layout when merging attention outputs. The STE option adds the mixed feature tensor around the projection within the token mixer. These are explicit implementation differences; `m3d` should not be interpreted as an unchanged execution of `m3d_original`. See [the implementation notes](docs/implementation.md).
+</div>
 
-The matched baselines use EdgeNeXt-XXS (`edgenext`), RepViT-M0.9 (`repvit`), and TransXNet-T (`transxnet`). All four models use the same clinical encoder, fusion head, data partitions, preprocessing, optimization, and training duration. Short display names are EdgeNeXt, RepViT, TransXNet, and M3D-Net.
+---
 
-## Installation
+## Overview
 
-Use Python 3.11 and an NVIDIA CUDA GPU supporting BF16 for the reference training protocol. The environment pins PyTorch 2.7.1 with CUDA 12.8, torchvision 0.22.1, timm 1.0.15, and MMCV Lite 2.2.0. The Pixi lock file covers Windows and Linux; runtime validation for this release was performed on Windows with an RTX 5060. A compatible NVIDIA driver is required; a separate CUDA toolkit is not required for these PyTorch wheels.
+**M3D-Net coordinates three complementary operations across a four-stage image encoder:** coordinate-aware spatial context, bounded reuse of earlier features, and differential global attention. Resolution-aware placement preserves access to fine-scale information while reserving dense differential attention for coarse feature grids.
 
-With [Pixi](https://pixi.sh/):
+**M3D** stands for **multi-scale, multiway, and differential** processing of two-dimensional breast images. The manuscript studies a base mammography encoder and an adapted image–clinical ultrasound system.
+
+This repository provides the core encoder, the adapted multimodal model, matched baseline implementations, and an executable **BrEaST 50-epoch reproduction protocol**. The original AISSLab mammography split and complete historical training configuration remain outside the released recipe. See [implementation scope](docs/implementation.md) for the distinction between the base encoder and the ultrasound adaptation.
+
+## Architecture
+
+<p align="center">
+  <img src="assets/architecture.svg" alt="Four-stage M3D-Net encoder, operator allocation, and the separate BrEaST image-clinical fusion adaptation" width="100%">
+</p>
+
+**Context — Multi-scale coordinate attention (MCA).** Pooled spatial context at multiple scales is combined with explicit two-dimensional coordinates to weight local–global features.
+
+**Reuse — Multiway dynamic dense connections (MUDD).** Input-dependent path weights retrieve at most four recent feature maps from the current stage. History resets at resolution transitions.
+
+**Contrast — Differential attention (DA).** Two global attention maps are subtracted in Stages 3–4, where the spatial grids are smaller. The local branch retains dynamic convolution.
+
+The BrEaST adaptation concatenates a **1000-D image representation** with a **1000-D clinical representation**, then applies the shared `2000 → 1024 → 512 → 2` classifier. All four compared systems use the same clinical branch and fusion head.
+
+<details>
+<summary><strong>Model names and implementation variants</strong></summary>
+
+- **`m3d` — M3D-Net†:** adapted ultrasound implementation with the DA output-layout correction and the STE projection shortcut enabled.
+- **`m3d_original` — legacy encoder switches:** original DA output layout and projection behavior within the same multimodal wrapper. This option alone does not reproduce the image-only mammography experiment.
+- **`edgenext` — EdgeNeXt:** XXS backbone.
+- **`repvit` — RepViT:** M0.9 backbone.
+- **`transxnet` — TransXNet:** T backbone.
+
+† The two ultrasound changes alter forward computation without adding parameters. The adapted system is not a frozen mammography checkpoint. Exact tensor operations are documented in [implementation.md](docs/implementation.md).
+
+The clinical class retains its historical name `iTransformer` for compatibility. Here it is a four-layer, eight-head Transformer encoder with a single clinical token, rather than a direct implementation of the time-series iTransformer.
+
+</details>
+
+## Quick start
+
+Use a CUDA GPU with BF16 support for the reference training protocol. The locked Pixi environment covers Windows and Linux; the release was checked on Windows with an RTX 5060.
 
 ```bash
+git clone https://github.com/YuZhengYYDS/M3D-Net.git
+cd M3D-Net
 pixi install --locked
+
+# Check the environment and model interfaces with synthetic inputs.
 pixi run test
 pixi run smoke-cuda
+
+# Download data and official ImageNet initialization weights.
+pixi run download-breast
+pixi run prepare-breast
+pixi run weights
+
+# Train all four matched systems, each for 50 epochs.
+pixi run reproduce
 ```
 
-Alternatively, use Conda:
+Cloning a private repository requires access to it. Prefer Conda? Use [`environment.yml`](environment.yml); installation steps, local-archive preparation, and execution options are in the [reproduction guide](docs/reproduction.md).
+
+### Train one model
 
 ```bash
-conda env create -f environment.yml
-conda activate m3d-net
-python -m unittest discover -s tests -p "test_*.py"
-python tests/smoke.py --device cuda
+pixi run python train.py --model m3d --output outputs/breast_full_clinical/m3d
 ```
 
-Use the commands below from the repository root. Prefix each `python` command with `pixi run` when using Pixi. The smoke checks use synthetic inputs; they do not train on patient data or produce research results. `python tests/smoke.py --device cpu` is also available for a CPU-only functional check.
-
-## Data preparation
-
-BrEaST is distributed as [TCIA Breast-Lesions-USG](https://www.cancerimagingarchive.net/collection/breast-lesions-usg/), under CC BY 4.0. See the [dataset publication](https://doi.org/10.1038/s41597-024-02984-z) and [authors' repository](https://github.com/best-ippt-pan-pl/BrEaST).
-
-The preparation script takes the complete image/clinical ZIP, checks the clinical workbook's SHA256, and deterministically regenerates the patient split. It retains all 256 cases: 154 benign and 4 normal cases form the nonmalignant class; 98 malignant cases form the positive class. No lesion mask or annotation-derived crop is used.
-
-Download the verified public mirror, then prepare the data:
+### Resume a run
 
 ```bash
-python download.py breast
-python prepare_data.py --archive data/downloads/breast_lesions_usg.zip
+pixi run python train.py --model m3d --output outputs/breast_full_clinical/m3d --resume
 ```
 
-Alternatively, download the archive from the source links and provide its local path:
+### Evaluate the fixed final checkpoint
 
 ```bash
-python prepare_data.py --archive /path/to/breast_lesions_usg.zip --output data/breast
+pixi run python evaluate.py --checkpoint outputs/breast_full_clinical/m3d/model.pt --split val --output outputs/breast_full_clinical/m3d/validation.json
 ```
 
-The downloader verifies the exact mirror archive hash. The preparation script validates the clinical workbook version independently, allowing a differently packaged archive with the same workbook and images. If an upstream download changes, obtain the matching version rather than bypassing the hash check.
+Test evaluation is a separate command using `--split test`. The trainer uses only training and validation images. See [evaluation and checkpoint handling](docs/reproduction.md#resume-and-evaluation).
 
-The script creates `data/breast/manifest.csv` and padded images. Seed 42 and the two-stage stratified patient split produce 153 training, 51 validation, and 52 test cases. Age imputation and normalization are fitted only on observed ages from unique training patients. Inputs include age, history/symptoms, physical signs, breast tissue composition, and missing-value indicators. The BI-RADS risk category and diagnostic target are excluded from model inputs. See [the data protocol](docs/data.md) for all 22 fields and the manifest schema.
+## Data and protocol
 
-## Pretrained initialization
+The released recipe uses [BrEaST / TCIA Breast-Lesions-USG](https://www.cancerimagingarchive.net/collection/breast-lesions-usg/), pairing one ultrasound image with clinical information for each of **256 patients**.
 
-```bash
-python download.py weights
-```
+- **Partition:** 153 training / 51 validation / 52 test patients; fixed seed 42, stratified and patient-disjoint.
+- **Inputs:** complete 256 × 256 ultrasound frames and 22 clinical encodings. No annotation-derived cropping; BI-RADS risk category and diagnostic labels are excluded from predictors.
+- **Training:** 50 epochs, batch size 4, AdamW at `2e-5`, BF16 training and FP32 validation, with identical settings across the four systems.
+- **Initialization:** verified official ImageNet weights; M3D loads only compatible TransXNet tensors. All parameters remain trainable.
+- **Reporting:** fixed final-epoch accuracy; Tail averages the final ten validation accuracies. Validation and test remain separate evaluation splits.
 
-This downloads official ImageNet weights for the three backbone families into `data/pretrained/`, with SHA256 verification. EdgeNeXt, RepViT, and TransXNet load their complete matching image-backbone state. M3D-Net loads only matching TransXNet tensors; its additional modules, clinical encoder, and fusion head are initialized separately. The exact tensor coverage is written into each run's configuration. Every parameter remains trainable.
+The [shared configuration](configs/breast_full_clinical.json), [feature schema](docs/data.md), and [full reproduction guide](docs/reproduction.md) specify preprocessing, repetition, gradient clipping, loss averaging, and the original learning-rate update order.
 
-## Reproduce the matched comparison
+**Source-only release.** Dataset records, checkpoints, training logs, performance tables, and result plots are not stored in this repository. The figures above are architecture schematics. Downloads and generated outputs remain in ignored local directories.
 
-```bash
-python reproduce.py
-```
-
-This runs EdgeNeXt, RepViT, TransXNet, and M3D-Net sequentially using [the shared configuration](configs/breast_full_clinical.json). Each run trains for **50 epochs**. The trainer rejects research configurations shorter than 50 epochs.
-
-To inspect the commands first:
-
-```bash
-python reproduce.py --dry-run
-```
-
-To train M3D-Net alone:
-
-```bash
-python train.py --model m3d --output outputs/breast_full_clinical/m3d
-```
-
-To run the original implementation switches as a separate experiment:
-
-```bash
-python train.py --model m3d_original --output outputs/breast_full_clinical/m3d_original
-```
-
-The reference configuration uses:
-
-- AdamW, learning rate `2e-5`, weight decay `1e-4`, betas `(0.9, 0.999)`, and gradient norm clipping at `3.0`.
-- Batch size 4, two copies per case, and `drop_last=True` for training. Extra training copies receive Gaussian clinical noise with standard deviation `0.01`.
-- Full-frame RGB images, aspect-preserving bilinear resizing and black padding to 256 pixels, followed by crop/flip/rotation/color augmentation.
-- BF16 training, a disabled gradient scaler, FP32 validation, and CUDA graph capture with RNG and BatchNorm buffers restored after capture.
-- The original cosine assignment order: set the epoch's learning rate **after** each optimizer update. The first update of a new epoch uses the preceding learning rate.
-- Fixed final-epoch evaluation. `Acc.` is the final validation accuracy, `Tail` averages the final ten validation accuracies, and validation loss is the unweighted mean of batch mean cross-entropies, including the last short batch.
-
-Validation repeats each case twice to preserve the experimental batching and loss calculation. This does not create additional independent patients. With the standard split, each epoch contains 76 optimizer updates and 304 sampled training rows. There is no early stopping or automatic best-checkpoint selection in the reproduction entry point.
-
-CUDA graph capture can be disabled with `--no-cuda-graphs` if required for another GPU. This change is recorded in the configuration. Floating-point results can differ across devices, library versions, and execution modes; the fixed seed does not guarantee identical results on every platform.
-
-## Resume and evaluation
-
-Resume a single run using the same command plus `--resume`, or resume the complete sequence:
-
-```bash
-python reproduce.py --resume
-```
-
-`last.pt` saves the model, optimizer, RNG states, configuration, and history atomically after every completed epoch. Resume restores these states and validates the configuration. Only load resume checkpoints generated by a trusted run. A `RUNNING.lock` prevents concurrent writes; after an abrupt process termination, remove that run's lock only after confirming no training process still owns it.
-
-After training, `model.pt` contains the final model and configuration for weights-only loading:
-
-```bash
-python evaluate.py --checkpoint outputs/breast_full_clinical/m3d/model.pt --split val --output outputs/breast_full_clinical/m3d/validation.json
-```
-
-The trainer never loads test images. Test evaluation is an explicit, separate command, using the fixed checkpoint and the same frozen manifest:
-
-```bash
-python evaluate.py --checkpoint outputs/breast_full_clinical/m3d/model.pt --split test --output outputs/breast_full_clinical/m3d/test.json
-```
-
-Keep validation and test metrics labeled separately. Select the model and protocol before test evaluation. Generated outputs stay under `outputs/` and are ignored by Git.
-
-## Repository layout
+## Code map
 
 ```text
-m3d/
-  models/m3d_net.py       MCA, MUDD, DA, and the M3D image backbone
-  models/transxnet.py     TransXNet baseline
-  models/repvit.py        RepViT baseline
-  models/edgenext.py      EdgeNeXt baseline and supporting layers
-  clinical.py            Clinical Transformer encoder
-  fusion.py              Shared multimodal classifier
-  metadata.py            Clinical feature vocabulary and normalization
-  data.py                Manifest validation and augmentation
-  engine.py              Optimization, CUDA graphs, and FP32 evaluation
-  pretrained.py          Verified ImageNet initialization
-configs/                 Shared reproducible training configuration
-docs/                    Data protocol and implementation notes
-tests/                   Synthetic functional and protocol checks
-prepare_data.py          BrEaST preparation and patient split
-download.py              Dataset and weight download helpers
-train.py                 Training and resume entry point
-evaluate.py              Fixed-checkpoint validation/test evaluation
-reproduce.py             Four-model matched comparison
-pixi.toml / pixi.lock    Isolated, locked environment
-environment.yml          Conda installation alternative
+M3D-Net/
+├── m3d/
+│   ├── models/m3d_net.py      # Base encoder: MCA, MUDD, DA
+│   ├── models/               # EdgeNeXt, RepViT, TransXNet
+│   ├── clinical.py           # Clinical Transformer encoder
+│   ├── fusion.py             # Shared image–clinical classifier
+│   ├── data.py               # Patient partitions and augmentation
+│   ├── metadata.py           # Fixed feature vocabulary
+│   ├── engine.py             # Optimization and evaluation
+│   └── pretrained.py         # Verified warm-start loading
+├── configs/                  # Matched 50-epoch protocol
+├── docs/                     # Reproduction and method details
+├── tests/                    # Synthetic and protocol checks
+├── assets/                   # Editable SVG architecture graphics
+├── prepare_data.py           # BrEaST preparation
+├── download.py               # Data and weight downloads
+├── train.py                  # Training and exact-state resume
+├── evaluate.py               # Fixed-checkpoint evaluation
+├── reproduce.py              # Four-model experiment entry point
+├── pixi.toml / pixi.lock      # Locked environment
+├── environment.yml           # Conda alternative
+├── CITATION.cff               # Software and manuscript citation
+└── LICENSE                   # Apache License 2.0
 ```
 
-## Acknowledgments
+## Citation
 
-This implementation builds on [TransXNet](https://github.com/LMMMEng/TransXNet), [RepViT](https://github.com/THU-MIG/RepViT), [EdgeNeXt](https://github.com/mmaaz60/EdgeNeXt), and PyTorch image-model utilities. Please cite the respective model and dataset publications when using their contributions. Upstream license texts and attribution are retained in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and `licenses/`.
+If this code contributes to your research, please cite the accompanying manuscript. The entry identifies the current manuscript; no publication venue or DOI is assigned here.
+
+```bibtex
+@unpublished{yu_m3dnet_2026,
+  title  = {{M3D-Net}: Hierarchical Coordination of Spatial Context,
+            Feature Reuse, and Differential Attention for
+            Mammography Classification},
+  author = {Yu, Zheng and Li, Xinhang and Gao, Jiabao and Li, Xiang},
+  year   = {2026},
+  note   = {Manuscript. Accompanying code repository},
+  url    = {https://github.com/YuZhengYYDS/M3D-Net}
+}
+```
+
+GitHub's **Cite this repository** menu is configured through [`CITATION.cff`](CITATION.cff).
+
+## License and acknowledgments
+
+Project-authored code and documentation are licensed under the **[Apache License 2.0](LICENSE)**. Third-party components retain their original terms: TransXNet and RepViT use Apache-2.0; EdgeNeXt components retain MIT notices. See [`NOTICE`](NOTICE) and [third-party attribution](THIRD_PARTY_NOTICES.md).
+
+We thank the authors of [TransXNet](https://github.com/LMMMEng/TransXNet), [EdgeNeXt](https://github.com/mmaaz60/EdgeNeXt), [RepViT](https://github.com/THU-MIG/RepViT), and [BrEaST](https://github.com/best-ippt-pan-pl/BrEaST). The manuscript also builds on coordinate attention, MUDDFormer, and differential-attention research. Dataset and pretrained-weight terms are separate from the repository license.
+
+For questions and reproducible bug reports, please use [GitHub Issues](https://github.com/YuZhengYYDS/M3D-Net/issues). See [CONTRIBUTING.md](CONTRIBUTING.md) for a short checklist.

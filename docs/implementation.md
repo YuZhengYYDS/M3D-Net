@@ -1,5 +1,23 @@
 # Implementation details
 
+## Paper-to-code mapping
+
+The accompanying manuscript is **M3D-Net: Hierarchical Coordination of Spatial Context, Feature Reuse, and Differential Attention for Mammography Classification**, by Zheng Yu, Xinhang Li, Jiabao Gao, and Xiang Li.
+
+The base mammography encoder uses widths `(48, 96, 224, 448)` and depths `(3, 3, 9, 3)`, with SRA in Stages 1–2 and DA in Stages 3–4. It can be instantiated directly with a three-class image-only head:
+
+```python
+import torch
+from m3d.models.m3d_net import transxnet_t
+
+encoder = transxnet_t(num_classes=3, img_size=256).eval()
+with torch.no_grad():
+    logits = encoder(torch.randn(1, 3, 256, 256))
+assert logits.shape == (1, 3)
+```
+
+The supplied `train.py` and `reproduce.py` entry points implement the BrEaST image–clinical adaptation. `m3d` corresponds to M3D-Net† in the manuscript. `m3d_original` turns off the two adaptation switches inside the same multimodal wrapper; it does not restore the image-only AISSLab training setup. The original mammography split and complete historical run configuration are not reconstructed in this release.
+
 ## Core modules
 
 `m3d/models/m3d_net.py` preserves the tensor operations of the experimental implementation. The release moves modules into a package, normalizes documentation to English, removes constructor diagnostics and global timm factory registration, and exposes the clinical/fusion code independently of the original training script.

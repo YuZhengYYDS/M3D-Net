@@ -1,0 +1,20 @@
+M3D-Net
+Copyright 2026 M3D-Net contributors
+
+Project-authored code, documentation, and architecture schematics are provided
+under the Apache License, Version 2.0. See LICENSE.
+
+This project includes modified implementations derived from:
+- TransXNet (LMMMEng/TransXNet): Apache License 2.0.
+- RepViT (THU-MIG/RepViT): Apache License 2.0.
+- EdgeNeXt (mmaaz60/EdgeNeXt): MIT License.
+  Copyright (c) 2022 Muhammad Maaz.
+  Copyright (c) Meta Platforms, Inc. and affiliates.
+
+Upstream license texts are retained in licenses/. THIRD_PARTY_NOTICES.md
+identifies the relevant files and local modifications. These notices do not
+change the licenses of the upstream components.
+
+BrEaST data and official pretrained weights are obtained separately and remain
+subject to their respective upstream terms. They are not covered by a new
+license grant from this repository.

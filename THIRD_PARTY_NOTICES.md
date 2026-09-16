@@ -1,6 +1,6 @@
 # Third-party code and data
 
-The model implementations retain contributions from the projects below. Their upstream license texts are included verbatim. Project-specific code is maintained in this private research repository; no additional blanket license is assigned to it by this release.
+Project-authored code, documentation, and architecture schematics are licensed under the [Apache License 2.0](LICENSE). The model implementations retain contributions from the projects below, whose original terms remain applicable. Their upstream license texts are included verbatim. See also [NOTICE](NOTICE).
 
 ## TransXNet
 
