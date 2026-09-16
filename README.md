@@ -140,27 +140,12 @@ M3D-Net/
 ├── reproduce.py              # Four-model experiment entry point
 ├── pixi.toml / pixi.lock      # Locked environment
 ├── environment.yml           # Conda alternative
-├── CITATION.cff               # Software and manuscript citation
 └── LICENSE                   # Apache License 2.0
 ```
 
 ## Citation
 
-If this code contributes to your research, please cite the accompanying manuscript. The entry identifies the current manuscript; no publication venue or DOI is assigned here.
-
-```bibtex
-@unpublished{yu_m3dnet_2026,
-  title  = {{M3D-Net}: Hierarchical Coordination of Spatial Context,
-            Feature Reuse, and Differential Attention for
-            Mammography Classification},
-  author = {Yu, Zheng and Li, Xinhang and Gao, Jiabao and Li, Xiang},
-  year   = {2026},
-  note   = {Manuscript. Accompanying code repository},
-  url    = {https://github.com/YuZhengYYDS/M3D-Net}
-}
-```
-
-GitHub's **Cite this repository** menu is configured through [`CITATION.cff`](CITATION.cff).
+To Be Announced.
 
 ## License and acknowledgments
 
