@@ -1,0 +1,42 @@
+# Local environments and tooling
+.pixi/
+.venv/
+venv/
+.tools/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.idea/
+.vscode/
+.DS_Store
+# Dataset images, clinical records, manifests, and generated outputs
+/data/
+/outputs/
+/results/
+/checkpoints/
+/logs/
+*.pt
+*.pth
+*.pth.tar
+*.ckpt
+*.safetensors
+*.npy
+*.npz
+*.csv
+*.xlsx
+*.xls
+*.png
+*.jpg
+*.jpeg
+*.dcm
+*.zip
+*.pdf
+*.docx
+*.log
+*.tmp
+# Credentials and machine-local configuration
+.env
+.env.*
+*.pem
+*.key
+*.token

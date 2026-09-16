@@ -1,0 +1,20 @@
+name: m3d-net
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - --extra-index-url https://download.pytorch.org/whl/cu128
+      - torch==2.7.1+cu128
+      - torchvision==0.22.1+cu128
+      - timm==1.0.15
+      - mmcv-lite==2.2.0
+      - mmengine==0.10.7
+      - numpy==1.26.4
+      - pandas==2.3.3
+      - scikit-learn==1.9.0
+      - pillow==12.3.0
+      - openpyxl==3.1.5
+      - opencv-python==4.11.0.86
+      - requests==2.34.2

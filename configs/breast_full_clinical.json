@@ -1,0 +1,18 @@
+{
+  "protocol": "breast_full_clinical_50ep",
+  "seed": 42,
+  "epochs": 50,
+  "batch_size": 4,
+  "lr": 0.00002,
+  "weight_decay": 0.0001,
+  "betas": [0.9, 0.999],
+  "input_size": 256,
+  "num_workers": 0,
+  "resample_factor": 2,
+  "gradient_clip_norm": 3.0,
+  "precision": "bf16",
+  "cuda_graphs": true,
+  "pretrained": true,
+  "metadata_profile": "breast_full_clinical",
+  "models": ["edgenext", "repvit", "transxnet", "m3d"]
+}
