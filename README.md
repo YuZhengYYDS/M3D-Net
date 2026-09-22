@@ -4,7 +4,7 @@
 
 ### Hierarchical Coordination of Spatial Context, Feature Reuse,<br>and Differential Attention for Mammography Classification
 
-<p><strong>Zheng Yu<sup>1</sup> · Xinhang Li<sup>2</sup> · Jiabao Gao<sup>1,2</sup> · Xiang Li<sup>3,*</sup></strong></p>
+<p><strong>Zheng Yu<sup>1</sup> · Xinhang Li<sup>2</sup> · Jiabao Gao<sup>1,2</sup> · Boyang Wang<sup>2</sup> · Xiang Li<sup>3,*</sup></strong></p>
 
 <sub>¹ Shenzhen Loop Area Institute · ² The Chinese University of Hong Kong, Shenzhen<br>³ Shenzhen Research Institute of Big Data · * Corresponding author</sub>
 
