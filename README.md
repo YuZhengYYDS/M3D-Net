@@ -145,7 +145,19 @@ M3D-Net/
 
 ## Citation
 
-To Be Announced.
+If you use M3D-Net in your research, please cite the [arXiv preprint](https://arxiv.org/abs/2609.27523):
+
+```bibtex
+@misc{yu2026m3dnethierarchicalcoordinationspatial,
+  title={M3D-Net: Hierarchical Coordination of Spatial Context, Feature Reuse, and Differential Attention for Mammography Classification},
+  author={Zheng Yu and Xinhang Li and Jiabao Gao and Boyang Wang and Xiang Li},
+  year={2026},
+  eprint={2609.27523},
+  archivePrefix={arXiv},
+  primaryClass={cs.CV},
+  url={https://arxiv.org/abs/2609.27523}
+}
+```
 
 ## License and acknowledgments
 
